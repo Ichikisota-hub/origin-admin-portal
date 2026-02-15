@@ -85,7 +85,7 @@ const handleInvite = async (role: 'player' | 'admin') => {
           "Content-Type": "application/json",
 
           // ✅ 修正：JWTじゃなく publishable(anon) key を入れる
-        "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "apikey": "sb_publishable_3CdNV7Fc0nEAfaktL8RChg_UWAZc1qQ."
 
           // ✅ JWT
           "Authorization": "Bearer " + session.access_token
