@@ -22,6 +22,28 @@ const supabase = createClient(
   }
 
   try {
+    // ★ 追加：ログインユーザーを取得（JWT検証）
+const authHeader = req.headers.get("Authorization");
+
+if (!authHeader) {
+  return new Response(
+    JSON.stringify({ error: "No JWT" }),
+    { status: 401, headers: corsHeaders }
+  );
+}
+
+const token = authHeader.replace("Bearer ", "");
+
+const {
+  data: { user },
+} = await supabase.auth.getUser(token);
+
+if (!user) {
+  return new Response(
+    JSON.stringify({ error: "Invalid JWT" }),
+    { status: 401, headers: corsHeaders }
+  );
+}
     // 【修正】roleをbodyから取得するように変更（デフォルトは player）
     const { name, email, role = "player" } = await req.json();
 
