@@ -77,11 +77,15 @@ const PlayersPage: React.FC = () => {
     try {
 
       const { data: { session } } = await supabase.auth.getSession();
-          console.log(session)
+      
       if (!session) {
         alert("ログインセッションなし");
+        setActionLoading(false);
         return;
       }
+
+      // あなたの環境の Anon Key (公開キー)
+      const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkdW1ianhoamh1cHJ3cXZxbnRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NjgxMjEsImV4cCI6MjA4NjQ0NDEyMX0._O6Q0_TDg8FfNSy444gwF7HhQxTg3hFBc5GonUeqguQ";
 
       const res = await fetch(
         "https://hdumbjxhjhuprwqvqntm.supabase.co/functions/v1/invite-player",
@@ -90,11 +94,16 @@ const PlayersPage: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
 
-            // ⭐ publishable / anon key
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkdW1ianhoamh1cHJ3cXZxbnRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NjgxMjEsImV4cCI6MjA4NjQ0NDEyMX0._O6Q0_TDg8FfNSy444gwF7HhQxTg3hFBc5GonUeqguQ",
+            // 1. 門番を通るためのキー (Anon Key)
+            "apikey": ANON_KEY,
+            
+            // 2. 🔴 ここが重要修正！ Authorization にも Anon Key を入れる
+            // これで Gateway の 401 エラーを回避します
+            "Authorization": `Bearer ${ANON_KEY}`,
 
-            // ⭐ JWT
-            "Authorization": "Bearer " + session.access_token
+            // 3. 🟢 新設: 本当の身分証（ユーザートークン）はここに入れる
+            // Edge Function側で req.headers.get("X-User-Token") で受け取ります
+            "X-User-Token": session.access_token
           },
           body: JSON.stringify({
             name: formData.name,
