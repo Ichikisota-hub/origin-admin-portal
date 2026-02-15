@@ -35,6 +35,7 @@ const PlayersPage: React.FC = () => {
   const checkUserRole = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("SESSION", session)
       if (session) {
         const { data, error } = await supabase
           .from('users')
