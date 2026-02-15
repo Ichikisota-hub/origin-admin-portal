@@ -1,9 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { User } from '../../types';
-import { UserPlus, Trash2, Mail, Calendar, User as UserIcon, X, Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
+import {
+  UserPlus,
+  Trash2,
+  Mail,
+  Calendar,
+  User as UserIcon,
+  X,
+  Loader2,
+  ShieldCheck,
+  ShieldAlert
+} from 'lucide-react';
 
 const PlayersPage: React.FC = () => {
+
   const [players, setPlayers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -11,43 +22,38 @@ const PlayersPage: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
+  // ===============================
+  // Players取得
+  // ===============================
   const fetchPlayers = async () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("role", "player")
-        .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setPlayers(data || []);
-    } catch (err) {
-      console.error('Fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
+    const { data } = await supabase
+      .from("users")
+      .select("*")
+      .eq("role", "player")
+      .order("created_at", { ascending: false });
+
+    setPlayers(data || []);
+    setLoading(false);
   };
 
+  // ===============================
+  // 自分のrole確認
+  // ===============================
   const checkUserRole = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("SESSION", session);
 
-      if (session) {
-        const { data } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
+    const { data: { session } } = await supabase.auth.getSession();
 
-        if (data) {
-          setCurrentUserRole(data.role);
-        }
-      }
-    } catch (err) {
-      console.error('Error checking role:', err);
-    }
+    if (!session) return;
+
+    const { data } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+
+    if (data) setCurrentUserRole(data.role);
   };
 
   useEffect(() => {
@@ -56,9 +62,10 @@ const PlayersPage: React.FC = () => {
   }, []);
 
   // ===============================
-  // 🔥 修正版 handleInvite
+  // 招待処理
   // ===============================
   const handleInvite = async (role: 'player' | 'admin') => {
+
     if (actionLoading) return;
 
     if (!formData.name || !formData.email) {
@@ -69,11 +76,11 @@ const PlayersPage: React.FC = () => {
     setActionLoading(true);
 
     try {
+
       const { data: { session } } = await supabase.auth.getSession();
-      console.log("SESSION DEBUG", session);
 
       if (!session) {
-        alert("ログインセッションがありません");
+        alert("ログインセッションなし");
         return;
       }
 
@@ -84,17 +91,16 @@ const PlayersPage: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
 
-            // ✅ anon public key
-            "apikey":
-              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkdW1ianhoamh1cHJ3cXZxbnRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NjgxMjEsImV4cCI6MjA4NjQ0NDEyMX0._O6Q0_TDg8FfNSy444gwF7HhQxTg3hFBc5GonUeqguQ",
+            // ⭐ publishable / anon key
+            "apikey": "sb_publishable_3CdNV7Fc0nEAfaktL8RChg_UWAZc1qQ",
 
-            // ✅ JWT
-            "Authorization": "Bearer " + session.access_token,
+            // ⭐ JWT
+            "Authorization": "Bearer " + session.access_token
           },
           body: JSON.stringify({
             name: formData.name,
             email: formData.email,
-            role: role,
+            role: role
           }),
         }
       );
@@ -102,13 +108,12 @@ const PlayersPage: React.FC = () => {
       const json = await res.json();
 
       if (!json.success) {
-        throw new Error(json.error || "招待に失敗しました");
+        throw new Error(json.error || "招待失敗");
       }
 
-      alert(
-        role === "admin"
-          ? "管理者招待を送信しました"
-          : "プレイヤー招待を送信しました"
+      alert(role === "admin"
+        ? "管理者招待を送信しました"
+        : "プレイヤー招待を送信しました"
       );
 
       setFormData({ name: "", email: "" });
@@ -116,47 +121,118 @@ const PlayersPage: React.FC = () => {
       fetchPlayers();
 
     } catch (err: any) {
-      alert(err.message || "エラーが発生しました");
-    } finally {
-      setActionLoading(false);
+      alert(err.message || "エラー");
     }
+
+    setActionLoading(false);
   };
 
+  // ===============================
+  // 削除
+  // ===============================
   const handleDeletePlayer = async (id: string) => {
-    if (!confirm('このプレイヤーアカウントを無効化（削除）してもよろしいですか？')) return;
 
-    try {
-      const { error } = await supabase
-        .from("users")
-        .delete()
-        .match({ id });
+    if (!confirm("削除しますか？")) return;
 
-      if (error) throw error;
-      await fetchPlayers();
-    } catch {
-      alert('削除に失敗しました');
-    }
+    await supabase.from("users").delete().match({ id });
+
+    fetchPlayers();
   };
 
+  // ===============================
+  // UI
+  // ===============================
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">
-            ORIGIN ADMIN PORTAL
-          </h1>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tight">
-            プレイヤー管理
-          </h2>
-        </div>
+
+      {/* header */}
+      <div className="flex justify-between">
+        <h2 className="text-3xl font-bold">プレイヤー管理</h2>
+
         <button
           onClick={() => setIsAdding(!isAdding)}
-          className="flex items-center justify-center gap-2 px-6 py-4 bg-black text-white font-bold rounded-2xl"
+          className="px-4 py-3 bg-black text-white rounded-xl flex gap-2"
         >
-          {isAdding ? <X size={20} /> : <UserPlus size={20} />}
-          {isAdding ? 'キャンセル' : '新規登録・招待'}
+          {isAdding ? <X size={18}/> : <UserPlus size={18}/>}
+          {isAdding ? "キャンセル" : "新規登録"}
         </button>
       </div>
+
+      {/* ===============================
+          入力フォーム
+      =============================== */}
+      {isAdding && (
+
+        <div className="p-6 bg-white rounded-3xl shadow">
+
+          <div className="flex gap-3 mb-6">
+            <ShieldCheck/>
+            <h3 className="font-bold text-lg">新規登録</h3>
+          </div>
+
+          <div className="grid gap-4">
+
+            <input
+              type="text"
+              placeholder="名前"
+              value={formData.name}
+              onChange={(e)=>setFormData({...formData,name:e.target.value})}
+              className="p-3 border rounded-xl"
+            />
+
+            <input
+              type="email"
+              placeholder="メール"
+              value={formData.email}
+              onChange={(e)=>setFormData({...formData,email:e.target.value})}
+              className="p-3 border rounded-xl"
+            />
+
+            <div className="flex gap-3 justify-end">
+
+              <button
+                onClick={()=>handleInvite('player')}
+                disabled={actionLoading}
+                className="px-6 py-3 bg-gray-100 rounded-xl flex gap-2"
+              >
+                {actionLoading ? <Loader2 className="animate-spin"/> : <UserPlus size={16}/>}
+                プレイヤー招待
+              </button>
+
+              {currentUserRole === "creator" && (
+                <button
+                  onClick={()=>handleInvite('admin')}
+                  disabled={actionLoading}
+                  className="px-6 py-3 bg-black text-white rounded-xl flex gap-2"
+                >
+                  <ShieldAlert size={16}/>
+                  管理者招待
+                </button>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===============================
+          players list
+      =============================== */}
+      {!loading && players.map((player)=>(
+        <div key={player.id} className="p-6 bg-white rounded-3xl shadow flex justify-between">
+
+          <div>
+            <div className="font-bold">{player.name}</div>
+            <div className="text-sm text-gray-400">{player.email}</div>
+          </div>
+
+          <button onClick={()=>handleDeletePlayer(player.id)}>
+            <Trash2/>
+          </button>
+
+        </div>
+      ))}
+
     </div>
   );
 };
