@@ -1,4 +1,3 @@
-console.log("SESSION DEBUG", session);
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { User } from '../../types';
@@ -43,6 +42,7 @@ const PlayersPage: React.FC = () => {
   // 自分のrole確認
   // ===============================
   const checkUserRole = async () => {
+    console.log(session)
 
     const { data: { session } } = await supabase.auth.getSession();
 
