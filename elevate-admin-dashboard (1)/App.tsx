@@ -6,7 +6,10 @@ import LoginPage from './app/login/page';
 import RankingPage from './app/ranking/page';
 import PlayersPage from './app/players/page';
 import AdminsPage from './app/admins/page';
-import Home from './app/page'; // HomePage をインポート
+import Home from './app/page';
+
+// ⭐ 1. ここに追加：新しく作ったページを読み込む
+import SetPasswordPage from './pages/SetPasswordPage';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
@@ -36,11 +39,15 @@ const App: React.FC = () => {
   return (
     <HashRouter>
       <Routes>
+        {/* ⭐ 2. ここに追加：パスワード設定画面へのルート */}
+        {/* レイアウト(サイドバー)の外に置きたいので、ここに入れます */}
+        <Route path="/set-password" element={<SetPasswordPage />} />
+
         <Route path="/login" element={!session ? <LoginPage /> : <Navigate to="/" />} />
         
-        {/* セッションが必要なルート */}
+        {/* セッションが必要なルート（ログイン後に見れるページ群） */}
         <Route element={session ? <RootLayout /> : <Navigate to="/login" />}>
-          <Route path="/" element={<Home />} /> {/* リダイレクトではなく Home を表示 */}
+          <Route path="/" element={<Home />} />
           <Route path="/ranking" element={<RankingPage />} />
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/admins" element={<AdminsPage />} />
