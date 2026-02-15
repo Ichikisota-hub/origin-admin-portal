@@ -42,8 +42,6 @@ const PlayersPage: React.FC = () => {
   // 自分のrole確認
   // ===============================
   const checkUserRole = async () => {
-    console.log(session)
-
     const { data: { session } } = await supabase.auth.getSession();
 
     if (!session) return;
@@ -79,7 +77,7 @@ const PlayersPage: React.FC = () => {
     try {
 
       const { data: { session } } = await supabase.auth.getSession();
-
+          console.log(session)
       if (!session) {
         alert("ログインセッションなし");
         return;
