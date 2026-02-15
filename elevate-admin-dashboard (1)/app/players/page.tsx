@@ -57,56 +57,67 @@ const PlayersPage: React.FC = () => {
   }, []);
 
   // 【修正】roleを引数に取るように汎用化
-  const handleInvite = async (role: 'player' | 'admin') => {
-    if (actionLoading) return;
-    if (!formData.name || !formData.email) {
-      alert("名前とメールアドレスを入力してください");
+const handleInvite = async (role: 'player' | 'admin') => {
+  if (actionLoading) return;
+
+  if (!formData.name || !formData.email) {
+    alert("名前とメールアドレスを入力してください");
+    return;
+  }
+
+  setActionLoading(true);
+
+  try {
+    // ⭐ ログイン中のJWT取得
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      alert("ログインセッションがありません");
       return;
     }
 
-    setActionLoading(true);
+    const res = await fetch(
+      "https://hdumbjxhjhuprwqvqntm.supabase.co/functions/v1/invite-player",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
 
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+          // ⭐ これ追加（超重要）
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkdW1ianhoamh1cHJ3cXZxbnRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NjgxMjEsImV4cCI6MjA4NjQ0NDEyMX0._O6Q0_TDg8FfNSy444gwF7HhQxTg3hFBc5GonUeqguQ",
 
-      if (!session) throw new Error("ログインセッションがありません");
-
-      const res = await fetch(
-        "https://hdumbjxhjhuprwqvqntm.supabase.co/functions/v1/invite-player",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhkdW1ianhoamh1cHJ3cXZxbnRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4NjgxMjEsImV4cCI6MjA4NjQ0NDEyMX0._O6Q0_TDg8FfNSy444gwF7HhQxTg3hFBc5GonUeqguQ",
-            "Authorization": "Bearer " + session.access_token
-          },
-          body: JSON.stringify({ 
-            name: formData.name, 
-            email: formData.email, 
-            role: role // 【追加】ロールを指定して送信
-          }),
-        }
-      );
-
-      const json = await res.json();
-
-      if (!json.success) {
-        throw new Error(json.error || json.message || "招待に失敗しました");
+          // ⭐ JWT
+          "Authorization": "Bearer " + session.access_token
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          role: role
+        }),
       }
+    );
 
-      alert(role === 'admin' ? "Admin招待を送信しました" : "プレイヤー招待を送信しました");
-      setFormData({ name: "", email: "" });
-      setIsAdding(false);
-      await fetchPlayers();
+    const json = await res.json();
 
-    } catch (err: any) {
-      alert(err.message || "招待に失敗しました");
-    } finally {
-      setActionLoading(false);
+    if (!json.success) {
+      throw new Error(json.error || "招待に失敗しました");
     }
-  };
+
+    alert(role === "admin"
+      ? "管理者招待を送信しました"
+      : "プレイヤー招待を送信しました"
+    );
+
+    setFormData({ name: "", email: "" });
+    setIsAdding(false);
+    fetchPlayers();
+
+  } catch (err: any) {
+    alert(err.message || "エラーが発生しました");
+  } finally {
+    setActionLoading(false);
+  }
+};
 
   const handleDeletePlayer = async (id: string) => {
     if (!confirm('このプレイヤーアカウントを無効化（削除）してもよろしいですか？')) return;
