@@ -70,6 +70,7 @@ const handleInvite = async (role: 'player' | 'admin') => {
   try {
     // ⭐ ログイン中のJWT取得
     const { data: { session } } = await supabase.auth.getSession();
+    console.log("TOKEN:", session?.access_token);
 
     if (!session) {
       alert("ログインセッションがありません");
